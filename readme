@@ -4,7 +4,6 @@ Before uploading, make sure to set your author name in hunt.py.
 On Mac, zlbb.py had some trouble downloading the correct libverify.so, the osmim library, I had to download the source code and run make libverify.so on my computer
 
 This tool checks all your Opus Magnum solutions, compares them again the leaderboard, and reports which are pareto and should be submitted.
-If you're on Windows, it will automatically find your save folder.  Otherwise, you'll need to add it manually in hunt.py::root_folders
 
 It's not very pretty, but it works. If people like this and I'm not too lazy, I might throw a better UI on it.
 
