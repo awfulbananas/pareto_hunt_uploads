@@ -1,3 +1,8 @@
+This is a modification of GuiltyBystander's tool which can also match your Pareto solutions against gifs you've recorded, and bulk upload solutions which it can match to gifs
+
+Before uploading, make sure to set your author name in hunt.py.
+On Mac, zlbb.py had some trouble downloading the correct libverify.so, the osmim library, I had to download the source code and run make libverify.so on my computer
+
 This tool checks all your Opus Magnum solutions, compares them again the leaderboard, and reports which are pareto and should be submitted.
 If you're on Windows, it will automatically find your save folder.  Otherwise, you'll need to add it manually in hunt.py::root_folders
 
@@ -23,6 +28,10 @@ To use run hunt.py and enter the number on the menu to do the action, or pass th
     Reports all your solutions which would be pareto if submitted to the global leaderboard.  Be sure to run #6 first
 9. Just records
     Reports all your pareto solutions which would win a tracked category.  Ties beyond the hard defined metrics default to the existing solutions.
+m. Match Gifs
+	Tries to match gifs in your gif folder to Pareto solutions. It currently doesn't work for production puzzles and some tournament puzzles
+u. Upload Solutions
+	uploads all of your Pareto solutions which have matched gifs to the leaderboard
 
 
 Thanks to:

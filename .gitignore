@@ -2,6 +2,7 @@
 *.pyc
 cache.db
 cache.db-journal
+.DS_Store
 lib/
 puzzle/
 pareto/

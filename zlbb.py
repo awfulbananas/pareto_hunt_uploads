@@ -2,6 +2,7 @@ import json
 import math
 import os
 import urllib.request
+import requests
 
 import db
 
@@ -134,7 +135,7 @@ def get_manifold_sql():
 
     #        0                1                 2                 3         4           5        6                  7           8          9             10        11                12                13             14            15               16             17           18
     # SELECT puzzle_name,    'db',             'solution_name',   mCost,    mCycles,    mArea,   mInstructions,     mHeight,    mWidth,    mBestagon,    mRate,    mAreaInfLevel,    mAreaInfValue,    mHeightInf,    mWidthInf,    mBestagonInf,    mTrackless,    mOverlap,    mLoop from community
-    fields = "a.puzzle_name, a.solution_file, a.solution_name, a.mcCost, a.mcCycles, a.mcArea, a.mcInstructions, a.mcHeight, a.mcWidth, a.mcBestagon, a.mcRate, a.mcAreaInfLevel, a.mcAreaInfValue, a.mcHeightInf, a.mcWidthInf, a.mcBestagonInf, a.mcTrackless, a.mcOverlap, a.mcLoop, a.gifStart, a.gifEnd"
+    fields = "a.puzzle_name, a.solution_file, a.solution_name, a.mcCost, a.mcCycles, a.mcArea, a.mcInstructions, a.mcHeight, a.mcWidth, a.mcBestagon, a.mcRate, a.mcAreaInfLevel, a.mcAreaInfValue, a.mcHeightInf, a.mcWidthInf, a.mcBestagonInf, a.mcTrackless, a.mcOverlap, a.mcLoop"
 
     sqls = []
     for manifold in jj:
@@ -194,6 +195,28 @@ def get_puzzle_name(puz):
         return puzzles[puz]['displayName']
     return puz
 
+def upload_paretos(solutions, gifs, author):
+    if gifs == None:
+        print("please match gifs first")
+        return
+    url = 'https://zlbb.faendir.com/om/submit'
+    for i in range(len(solutions)):
+        gifData = None
+        if gifs[i] == None:
+            print("foo")
+            continue
+        else:
+            gifData = open(gifs[i], 'rb')
+        allowGifUpdate = False
+        solutionFile = open(solutions[i][1], 'rb')
+        response = requests.post(url, data = {
+                'author':         author,
+                'allowGifUpdate': allowGifUpdate
+            }, files = {
+                'solution': solutionFile,
+                'gifData': gifData
+            })
+        print(response.text)
 
 # todo: cache these locally?
 puzzles = get_puzzles()

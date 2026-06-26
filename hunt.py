@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import math
-import os
+import os 
 import platform
 import shutil
 import sys
@@ -16,13 +16,22 @@ root_folders = []
 
 # if on windows, auto find my documents and save folder
 pp = []
+
+#if your gifs aren't saved to your desktop, set this manually instead
+gif_folder = None
+#make sure to update this to the your name
+author = "No Author Name Entered"
+
 if platform.system() == 'Windows':
     pp.append(os.path.expanduser(r"~\Documents\My Games\Opus Magnum"))
+    gif_folder = os.path.expanduser(r"~\Desktop")
 elif platform.system() == 'Darwin':
     pp.append(os.path.expanduser(r"~/Library/Application Support/Opus Magnum"))
+    gif_folder = os.path.expanduser(r"~/Desktop")
 elif platform.system() == 'Linux':
     pp.append(os.path.expanduser(r"~/.local/share/Opus Magnum"))
     pp.append(os.path.expanduser(r"~/data/Opus Magnum"))
+    gif_folder = os.path.expanduser(r"~/Desktop")
 
 for p in pp:  # yes, I'm great at picking variable names
     if os.path.isdir(p):
@@ -32,6 +41,8 @@ for p in pp:  # yes, I'm great at picking variable names
                 root_folders.append(full)
 
 print(root_folders)
+
+
 
 
 def scan_local():
@@ -116,16 +127,13 @@ def process_solutions():
                     mcCost, mcCycles, mcArea, mcInstructions,
                     mcHeight, mcWidth, mcBestagon, mcRate,
                     mcAreaInfLevel, mcAreaInfValue, mcHeightInf, mcWidthInf, mcBestagonInf,
-                    mcTrackless, mcOverlap, mcLoop,
-                    gifStart, gifEnd 
-                    )
+                    mcTrackless, mcOverlap, mcLoop)
                     VALUES (?,CURRENT_TIMESTAMP,?,?,?,?,
                     ?,?,?,?,
                     ?,?,?,?,
                     ?,?,?,?,
                     ?,?,?,?,?,
-                    ?,?,?,
-                    ?,?
+                    ?,?,?
                     )"""
             data += [
                 metrics['mpCost'], metrics['mpCycles'], metrics['mpArea'], metrics['mpInstructions'],
@@ -133,7 +141,6 @@ def process_solutions():
                 metrics['mcHeight'], metrics['mcWidth'], metrics['mcBestagon'], metrics['mcRate'],
                 metrics['mcAreaInfLevel'], metrics['mcAreaInfValue'], metrics['mcHeightInf'], metrics['mcWidthInf'], metrics['mcBestagonInf'],
                 metrics['mcTrackless'], metrics['mcOverlap'], metrics['mcLoop'],
-                metrics['gifStart'], metrics['gifEnd'],
             ]
             # print(metrics)
         else:
@@ -247,7 +254,7 @@ def record_string(record):
         aLev = 'error'
 
     r = record  # lazy copy/paste
-    fstr = f'{puzzle_name:25} {file:20} "{r[2]}"  {r[3]}g/{r[4]}c/{r[5]}a/{r[6]}i/{r[7]}h/{r[8]}w/{r[9]}b  {r[10]}r/{r[11]}A{aLev}/{r[13]}H∞/{r[14]}W∞/{r[15]}B∞  {flags}  gif({r[19]}-{r[20]})'
+    fstr = f'{puzzle_name:25} {file:20} "{r[2]}"  {r[3]}g/{r[4]}c/{r[5]}a/{r[6]}i/{r[7]}h/{r[8]}w/{r[9]}b  {r[10]}r/{r[11]}A{aLev}/{r[13]}H∞/{r[14]}W∞/{r[15]}B∞  {flags}'
     # fstr2 = f'{puzzle_name:25}|{file:20}|{r[2]}|{r[3]}|{r[4]}|{r[5]}|{r[6]}|{r[7]}|{r[8]}|{r[9]}|{r[10]}|{r[12]}|{r[13]}|{flags}'
     # print(r)
     return fstr
@@ -395,10 +402,13 @@ def get_records(verbose=False):
         for metric in zlbb.categories:
             if zlbb.puzzles[puzzle]['type'] not in metric['manifold']['puzzleTypes']:
                 continue
-            best = sorted((score_whole(sol, metric), sol, sol[1]) for sol in both)[0]
+            try:
+                best = sorted((score_whole(sol, metric), sol, sol[1]) for sol in both)[0]
 
-            if best[-1] != 'db':
-                recs.setdefault(best[1], []).append(metric['displayName'])
+                if best[-1] != 'db':
+                    recs.setdefault(best[1], []).append(metric['displayName'])
+            except TypeError as err:
+                print(err)
 
     srecs = sorted([(rec, sorted(cats)) for rec, cats in recs.items()], key=lambda x: (x[0][0], x[1], x))
 
@@ -416,6 +426,65 @@ def get_records(verbose=False):
 
     return srecs
 
+#TODO: add matching for production puzzles
+def match_gifs(paretos):
+    gifPaths = os.listdir(gif_folder)
+    gifData = []
+    matchedGifs = []
+    for gif in gifPaths:
+        if not gif.endswith(".gif") or not gif.startswith("Opus Magnum"):
+            continue
+        rightParenInd = len(gif) - 7
+        curInd = rightParenInd
+        leftParenInd = None
+        rightNumInd = None
+        leftNumInd = None
+        cost = None
+        cycles = None
+        area = None
+        while leftParenInd == None:
+            curInd -= 1
+            char = gif[curInd]
+            if char == ',' or char == 'G':
+                rightNumInd = curInd
+            elif char == ' ':
+                if rightNumInd == None:
+                    continue
+                leftNumInd = curInd + 1
+                if area == None:
+                    area = int(gif[leftNumInd:rightNumInd])
+                else:
+                    cycles = int(gif[leftNumInd:rightNumInd])
+            elif char == '(':
+                leftParenInd = curInd
+                leftNumInd = leftParenInd + 1
+                cost = int(gif[leftNumInd:rightNumInd])
+        puzzleName = gif[14:leftParenInd - 1]
+        gifStats = (puzzleName.lower().replace(' ', '-'), cost, cycles, area, gif_folder + "/" + gif)
+        gifData.append(gifStats)
+        #print(gifStats)
+    for pareto in paretos:
+        curInd = len(pareto[1]) - 9
+        rightPuzzleNameInd = curInd
+        while pareto[1][curInd] != '/':
+            curInd -= 1
+        leftPuzzleNameInd = curInd + 1
+        paretoStats = (pareto[1][leftPuzzleNameInd:rightPuzzleNameInd], pareto[3], pareto[4], pareto[5])
+        possibleGifs = []
+        for stats in gifData:
+            if paretoStats[0].startswith(stats[0]) and stats[1] == paretoStats[1] and stats[2] == paretoStats[2] and stats[3] == paretoStats[3]:
+                possibleGifs.append(stats[4])
+        if len(possibleGifs) == 0:
+            print("no gif found for " + str(paretoStats))
+            matchedGifs.append(None)
+        elif len(possibleGifs) > 1:
+            print("multiple gifs found for " + paretoStats[0] + ", choosing the first")
+            matchedGifs.append(possibleGifs[0])
+        else:
+            print("gif found for " + paretoStats[0])
+            matchedGifs.append(possibleGifs[0])
+    return matchedGifs
+
 
 if __name__ == '__main__':
     tracked_puzzles = [f for f in os.listdir('puzzle') if f.endswith('.puzzle') and f[:-7] in zlbb.puzzles]
@@ -423,6 +492,7 @@ if __name__ == '__main__':
     # todo: compare against website list and report any diff
 
     local_stats = scan_local()
+    gifs = None
     while True:
         paretos = get_paretos()
         bad_cache = check_cache(paretos)
@@ -453,7 +523,11 @@ if __name__ == '__main__':
 
             print(f'9. Just records ({len(records)})')
 
-            # print('0. Process -> update cache -> report paretos')
+            print('m. match gifs to solution files')
+
+            print('u. upload paretos with matched gifs')
+
+            print('0. Process -> update cache -> report paretos')
 
             print('x. Exit')
             # todo, add overlap hermit mode warning
@@ -491,8 +565,15 @@ if __name__ == '__main__':
             process_solutions()
             for bc in check_cache(get_paretos()):
                 zlbb.update_community(bc)
-            get_paretos(True)
+            paretos = get_paretos(True)
             local_stats = scan_local()
+
+        elif m == 'm':
+            gifs = match_gifs(paretos)
+
+        elif m == 'u':
+            #upload all pareto solutions which have gifs
+            zlbb.upload_paretos(paretos, gifs, author)
 
         elif m.lower() == 'x' or m == '':
             break
