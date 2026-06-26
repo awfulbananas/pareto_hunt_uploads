@@ -86,31 +86,65 @@ def get_metric_approx(v, name: bytes):
 
 
 def is_legal(v, sol):
-    """overlap
-    + max(0, parts of type baron - 1)
-    + max(0, "parts of type glyph-disposal" - 1)
-    + duplicate reagents
-    + duplicate products
-    + max(0, "maximum track gap^2" - 1)"""
+    # https://github.com/F43nd1r/zachtronics-leaderboard-bot/blob/master/src/main/kotlin/com/faendir/zachtronics/bot/om/validation/validation.kt
+    # https://events.critelli.technology/static/metrics.html
+    """
+    overlap +
+    max(0, parts of type baron - 1) +
+    max(0, parts of type ravari - 1) +
+    max(0, "parts of type glyph-disposal" - 1) +
+    max(0, "parts of type glyph-proliferation" - 1) +
+    duplicate reagents +
+    duplicate products +
+    max(0, "maximum track gap^2" - 1) +
+    cabinet violations
+    """
 
-    wheel = get_metric(v, b'parts of type baron')
+    instruction = get_metric(v, b'instructions')
+    wheel1 = get_metric(v, b'parts of type baron')
+    wheel2 = get_metric(v, b'parts of type ravari')
     disposal = get_metric(v, b'parts of type glyph-disposal')
+    proliferation = get_metric(v, b'parts of type glyph-proliferation')
     reagents = not get_metric(v, b'duplicate reagents')
     products = not get_metric(v, b'duplicate products')
     track = get_metric(v, b'maximum track gap^2')
-    overlap = get_metric(v, b'overlap')  # banned in production only for now
+    cabinet_violations = get_metric(v, b'cabinet violations')
 
     err = lv.verifier_error(c_void_p(v))
     if err:
         # something went wrong, solution probably doesn't work
         return False
-    return (wheel <= 1 and
-            disposal <= 1 and
-            reagents and
-            products and
-            track <= 1 and
-            (overlap == 0 or zlbb.puzzles[sol.puzzle_name]['type'].casefold() != 'production')
-            )
+    return (
+        instruction < 16384 and
+        wheel1 <= 1 and
+        wheel2 <= 1 and
+        disposal <= 1 and
+        proliferation <= 1 and
+        reagents and
+        products and
+        track <= 1 and
+        # missing check for parts farther than 2^14 from origin are banned
+        cabinet_violations == 0
+    )
+
+
+def get_gif(metrics, v):
+    # I had trouble using Grimmy's algorithm.  I may try again later, link for future reference:
+    # https://github.com/Grimy/pareto/blob/main/gif.pl
+
+    length = get_metric(v, b'per repetition cycles')
+
+    if length and length != math.inf:
+        visual_loop_start = get_metric(v, b'visual loop start cycle')
+        start = visual_loop_start
+        end = start + length
+    else:
+        cycles = metrics['mcCycles']  # get_metric(v, b'cycles')
+        start = 0
+        end = cycles + 1
+
+    metrics['gifStart'] = start
+    metrics['gifEnd'] = end
 
 
 def get_metrics(sol):
@@ -186,20 +220,34 @@ def get_metrics(sol):
             'mcLoop': 1,
         })
 
-    if zlbb.puzzles[sol.puzzle_name]['type'].casefold() == 'production':
+    if zlbb.puzzles[sol.puzzle_name]['type'].casefold() == 'PRODUCTION'.casefold():
         metrics['mcHeight'] = None
         metrics['mcWidth'] = None
         metrics['mcBestagon'] = None
         metrics['mcHeightInf'] = None
         metrics['mcWidthInf'] = None
         metrics['mcBestagonInf'] = None
-
-    if zlbb.puzzles[sol.puzzle_name]['type'].casefold() != 'normal':
-        # we don't do width/bestagon on polymer or production
+    elif zlbb.puzzles[sol.puzzle_name]['type'].casefold() == 'POLYMER_HEIGHT'.casefold():
         metrics['mcWidth'] = None
         metrics['mcBestagon'] = None
         metrics['mcWidthInf'] = None
         metrics['mcBestagonInf'] = None
+    elif zlbb.puzzles[sol.puzzle_name]['type'].casefold() == 'POLYMER_WIDTH'.casefold():
+        metrics['mcHeight'] = None
+        metrics['mcBestagon'] = None
+        metrics['mcHeightInf'] = None
+        metrics['mcBestagonInf'] = None
+    elif zlbb.puzzles[sol.puzzle_name]['type'].casefold() == 'POLYMER_SKEW'.casefold():
+        metrics['mcHeight'] = None
+        metrics['mcWidth'] = None
+        metrics['mcBestagon'] = None
+        metrics['mcHeightInf'] = None
+        metrics['mcWidthInf'] = None
+        metrics['mcBestagonInf'] = None
+    elif zlbb.puzzles[sol.puzzle_name]['type'].casefold() != 'normal':
+        assert False, f"Unknown puzzle type {zlbb.puzzles[sol.puzzle_name]['type']}"
+
+    get_gif(metrics, v)
 
     err = lv.verifier_error(c_void_p(v))
     if err:

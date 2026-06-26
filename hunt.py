@@ -116,13 +116,16 @@ def process_solutions():
                     mcCost, mcCycles, mcArea, mcInstructions,
                     mcHeight, mcWidth, mcBestagon, mcRate,
                     mcAreaInfLevel, mcAreaInfValue, mcHeightInf, mcWidthInf, mcBestagonInf,
-                    mcTrackless, mcOverlap, mcLoop)
+                    mcTrackless, mcOverlap, mcLoop,
+                    gifStart, gifEnd 
+                    )
                     VALUES (?,CURRENT_TIMESTAMP,?,?,?,?,
                     ?,?,?,?,
                     ?,?,?,?,
                     ?,?,?,?,
                     ?,?,?,?,?,
-                    ?,?,?
+                    ?,?,?,
+                    ?,?
                     )"""
             data += [
                 metrics['mpCost'], metrics['mpCycles'], metrics['mpArea'], metrics['mpInstructions'],
@@ -130,6 +133,7 @@ def process_solutions():
                 metrics['mcHeight'], metrics['mcWidth'], metrics['mcBestagon'], metrics['mcRate'],
                 metrics['mcAreaInfLevel'], metrics['mcAreaInfValue'], metrics['mcHeightInf'], metrics['mcWidthInf'], metrics['mcBestagonInf'],
                 metrics['mcTrackless'], metrics['mcOverlap'], metrics['mcLoop'],
+                metrics['gifStart'], metrics['gifEnd'],
             ]
             # print(metrics)
         else:
@@ -243,7 +247,7 @@ def record_string(record):
         aLev = 'error'
 
     r = record  # lazy copy/paste
-    fstr = f'{puzzle_name:25} {file:20} "{r[2]}"  {r[3]}g/{r[4]}c/{r[5]}a/{r[6]}i/{r[7]}h/{r[8]}w/{r[9]}b  {r[10]}r/{r[11]}A{aLev}/{r[13]}H∞/{r[14]}W∞/{r[15]}B∞  {flags}'
+    fstr = f'{puzzle_name:25} {file:20} "{r[2]}"  {r[3]}g/{r[4]}c/{r[5]}a/{r[6]}i/{r[7]}h/{r[8]}w/{r[9]}b  {r[10]}r/{r[11]}A{aLev}/{r[13]}H∞/{r[14]}W∞/{r[15]}B∞  {flags}  gif({r[19]}-{r[20]})'
     # fstr2 = f'{puzzle_name:25}|{file:20}|{r[2]}|{r[3]}|{r[4]}|{r[5]}|{r[6]}|{r[7]}|{r[8]}|{r[9]}|{r[10]}|{r[12]}|{r[13]}|{flags}'
     # print(r)
     return fstr
@@ -389,7 +393,7 @@ def get_records(verbose=False):
         both = existing + potential
 
         for metric in zlbb.categories:
-            if zlbb.puzzles[puzzle]['type'] not in metric['puzzleTypes']:
+            if zlbb.puzzles[puzzle]['type'] not in metric['manifold']['puzzleTypes']:
                 continue
             best = sorted((score_whole(sol, metric), sol, sol[1]) for sol in both)[0]
 

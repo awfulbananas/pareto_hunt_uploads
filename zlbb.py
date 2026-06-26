@@ -134,7 +134,7 @@ def get_manifold_sql():
 
     #        0                1                 2                 3         4           5        6                  7           8          9             10        11                12                13             14            15               16             17           18
     # SELECT puzzle_name,    'db',             'solution_name',   mCost,    mCycles,    mArea,   mInstructions,     mHeight,    mWidth,    mBestagon,    mRate,    mAreaInfLevel,    mAreaInfValue,    mHeightInf,    mWidthInf,    mBestagonInf,    mTrackless,    mOverlap,    mLoop from community
-    fields = "a.puzzle_name, a.solution_file, a.solution_name, a.mcCost, a.mcCycles, a.mcArea, a.mcInstructions, a.mcHeight, a.mcWidth, a.mcBestagon, a.mcRate, a.mcAreaInfLevel, a.mcAreaInfValue, a.mcHeightInf, a.mcWidthInf, a.mcBestagonInf, a.mcTrackless, a.mcOverlap, a.mcLoop"
+    fields = "a.puzzle_name, a.solution_file, a.solution_name, a.mcCost, a.mcCycles, a.mcArea, a.mcInstructions, a.mcHeight, a.mcWidth, a.mcBestagon, a.mcRate, a.mcAreaInfLevel, a.mcAreaInfValue, a.mcHeightInf, a.mcWidthInf, a.mcBestagonInf, a.mcTrackless, a.mcOverlap, a.mcLoop, a.gifStart, a.gifEnd"
 
     sqls = []
     for manifold in jj:

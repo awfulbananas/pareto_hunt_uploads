@@ -4,8 +4,9 @@ con = sqlite3.connect('cache.db')
 
 # delete table from previous version
 local_fields = set(f[1] for f in con.execute('PRAGMA table_info("local")').fetchall())
-if 'mcBestagon' not in local_fields:
+if 'gifStart' not in local_fields:
     con.execute('DROP TABLE IF EXISTS local')
+    con.execute('DROP TABLE IF EXISTS community_cache')
     con.execute('DROP TABLE IF EXISTS community')
     print('found old version, deleting them')
 
@@ -38,6 +39,8 @@ CREATE TABLE IF NOT EXISTS "local" (
 	"mcTrackless"		INTEGER,
 	"mcOverlap"			INTEGER,
 	"mcLoop"			INTEGER,
+	"gifStart"			INTEGER,
+	"gifEnd"			INTEGER,
 	PRIMARY KEY("solution_file")
 )	""")
 con.execute("""
